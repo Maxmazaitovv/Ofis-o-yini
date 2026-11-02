@@ -1,0 +1,55 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find project folder
+        run: |
+          DIR=$(dirname "$(find . -name capacitor.config.json -not -path '*/node_modules/*' | head -n 1)")
+          echo "PROJECT_DIR=$DIR" >> "$GITHUB_ENV"
+
+      - name: Prepare web folder
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          mkdir -p www
+          if [ ! -f www/index.html ] && [ -f index.html ]; then cp index.html www/index.html; fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: npm install
+
+      - name: Add Android platform
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: npx cap add android
+
+      - name: Sync + landscape
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          npx cap sync android
+          sed -i '0,/<activity/s//<activity android:screenOrientation="sensorLandscape"/' android/app/src/main/AndroidManifest.xml
+
+      - name: Build debug APK
+        working-directory: ${{ env.PROJECT_DIR }}/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ofis-hayoti-apk
+          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk
