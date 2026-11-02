@@ -1,0 +1,157 @@
+<!DOCTYPE html><html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Ofis Hayoti</title>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#w{position:absolute;left:50%;top:50%;width:min(100vw,177.78vh);height:min(100vh,56.25vw);transform:translate(-50%,-50%)}
+canvas{width:100%;height:100%;image-rendering:pixelated;display:block;background:#111}
+#ui{position:absolute;inset:0;pointer-events:none}
+#dp{position:absolute;left:3%;bottom:6%;width:17%;aspect-ratio:1;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:2%}
+.b{pointer-events:auto;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.55);border-radius:20%;display:flex;align-items:center;justify-content:center;color:#fff;font:bold min(4vw,7vh) sans-serif}
+#a{position:absolute;right:5%;bottom:10%;width:11%;aspect-ratio:1;border-radius:50%}
+</style></head><body>
+<div id="w"><canvas id="c"></canvas>
+<div id="ui"><div id="dp">
+<div class="b" data-k="u" style="grid-area:1/2">▲</div><div class="b" data-k="l" style="grid-area:2/1">◀</div>
+<div class="b" data-k="r" style="grid-area:2/3">▶</div><div class="b" data-k="d" style="grid-area:3/2">▼</div></div>
+<div class="b" id="a" data-k="a">A</div></div></div>
+<script>
+const C=document.getElementById('c'),g=C.getContext('2d'),U=document.getElementById('ui');
+C.width=320;C.height=180;g.font='bold 8px monospace';
+const K={};let pk={},AC;
+const KM={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowUp:'u',w:'u',ArrowDown:'d',s:'d'};
+onkeydown=e=>{if(KM[e.key])K[KM[e.key]]=1;if(e.key==' '||e.key=='Enter'){e.preventDefault();act()}};
+onkeyup=e=>{if(KM[e.key])K[KM[e.key]]=0};
+document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k;
+b.onpointerdown=e=>{e.preventDefault();k=='a'?act():K[k]=1};
+b.onpointerup=b.onpointerleave=b.onpointercancel=()=>{K[k]=0}});
+C.onpointerdown=e=>{if(S.mode=='choice'){const r=C.getBoundingClientRect(),y=(e.clientY-r.top)/r.height*180,i=Math.floor((y-S.top)/14);if(i>=0&&i<S.op.length){S.sel=i;pick(i)}return}
+if(S.mode!='play')act()};
+function beep(f,d){try{AC=AC||new(window.AudioContext||webkitAudioContext)();const o=AC.createOscillator(),v=AC.createGain();o.type='square';o.frequency.value=f;v.gain.value=.03;o.connect(v);v.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+const r=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h)};
+const txt=(t,x,y,c)=>{g.fillStyle=c;g.fillText(t,Math.round(x),Math.round(y))};
+const cl=v=>Math.max(0,Math.min(100,v));
+function wrap(t,w){let L=[],c='';for(const wd of t.split(' ')){if(g.measureText(c+wd).width>w){L.push(c);c=''}c+=wd+' '}L.push(c);return L}
+let S={mode:'title',t:0,bn:0};
+const DN=['DUSHANBA','SESHANBA','CHORSHANBA','PAYSHANBA','JUMA'];
+const PJ={h:'#2b1b12',s:'#4a78c2',p:'#2a2f4a',t:'#d33'},PR={h:'#999',s:'#333',p:'#222',t:'#c93'},PM={h:'#4a2414',s:'#d0609a',p:'#5a3a66',l:1},PB={h:'#111',s:'#5ab06a',p:'#3a4a3a'};
+const HS=[{id:'desk',x:52,y:84,l:'Stol'},{id:'coffee',x:158,y:52,l:'Kofe'},{id:'boss',x:285,y:78,l:'Rustam aka'},{id:'mal',x:104,y:118,l:'Malika'},{id:'bob',x:196,y:118,l:'Bobur'},{id:'exit',x:160,y:172,l:'Chiqish'}];
+const EP={boss:[268,40],mal:[104,92],bob:[196,92]};
+const CO=[[30,60,44,18],[82,98,44,16],[174,98,44,16],[260,56,50,12],[250,38,3,32],[250,100,3,13],[253,110,67,3]];
+const SM={boss:"Ishingni qil, Jasur. Vaqt ketyapti.",mal:"Keyinroq gaplashamiz, ishim ko'p!",bob:"Hozircha yangilik yo'q, ha-ha."};
+const D=[
+{intro:{l:[["","Dushanba, 8:50. Toshkent tongi sovuq va shovqinli."],["Jasur","Men Jasur Karimov, 27 yoshdaman. 'Silk Road Logistics' kompaniyasida hisobchiman. Orzuim esa o'z biznesim."],["Jasur","Bu hafta ko'p narsani hal qiladi. Boshladik!"],["","Maslahat: stolda ishlang, kofe iching, hamkasblar bilan gaplashing. Ish tugagach Chiqishga boring."]]},
+boss:{l:[["Rustam aka","Jasur, 5 daqiqa kechikding. Gap bunda emas: Q4 hisoboti sendan, juma kuni kerak."],["Rustam aka","Juma kuni bo'lim boshlig'i o'rinbosarini tanlayman."]],p:"Javobing?",c:[["Albatta, bajaraman",[0,8,0,5]],["Ko'proq vaqt kerak bo'ladi",[0,-3,0,-3],[["Rustam aka","Mayli, lekin sifatli bo'lsin."]]]],h:1},
+mal:{l:[["Malika","Salom, Jasur! Men kichik bizneslar uchun hisob ilovasini yozyapman."],["Jasur","Zo'r g'oya-ku!"],["Malika","Bir kun hisobchi sifatida yordam bersang, juda yaxshi bo'lardi."]],e:[0,-6,0,0,1],h:1},
+bob:{l:[["Bobur","Rustam aka juma kuni o'rinbosar tanlaydi. Men esa divanimni tanlayman, ha-ha."],["Jasur","Sen doim hazillashasan, Bobur."]],e:[0,-3,0,0],h:.5}},
+{intro:{l:[["","Seshanba. Ofisda kofe hidi va klaviatura ovozi."],["Jasur","Hisobotni bugun ham davom ettirsam, juma kuni xotirjam bo'laman."]]},
+boss:()=>S.wk>0?{l:[["Rustam aka","Hisobotni ko'rdim. Yomon emas, Jasur."]],e:[0,-2,0,6],h:1}:{l:[["Rustam aka","Hisobot qani? Stolingda hali hech narsa yo'q-ku!"]],e:[0,10,0,-6],h:1},
+mal:{l:[["Malika","Mijoz pilot loyihaga rozi bo'ldi!!!"],["Malika","Kechqurun hisob-kitob modelini ko'rsatib bera olasanmi?"]],p:"Nima deysan?",c:[["Tabriklayman, yordam beraman",[-10,2,0,0,1]],["Hozir vaqtim yo'q",[0,3,0,0]]],h:1},
+bob:{l:[["Bobur","Shshsh... Rustam aka sen haqingda nimadir aytayotgan edi."]],p:"Nima qilasan?",c:[["Ishonmayman, ishimni qilaman",[0,-3,0,1]],["Nima ekanini so'rayman",[0,10,0,-2],[["Bobur","Bilmadim, shunchaki eshitdim, ha-ha."]]]],h:.5}},
+{intro:{l:[["","Chorshanba. Jasurning kompyuteri qora ekranga aylanib qoldi."],["Jasur","Yo'q, yo'q! Hisobot fayli shu yerda edi-ku!"]]},
+boss:{l:[["Rustam aka","Kompyuteringda muammo borligini eshitdim. Hisobot juma kuni tayyor bo'lishi shart."]],p:"Nima qilasan?",c:[["Kechgacha qolib tiklayman",[-25,10,0,8]],["IT xizmatiga topshiraman",[0,-2,0,-5]]],h:1},
+mal:{l:[["Malika","Qara-chi... Men fayllarni tiklab beraman, bir daqiqa!"],["Malika","Tayyor! Doim zaxira nusxa ol, hisobchi!"],["Jasur","Rahmat, Malika. Qarzdorman."]],e:[0,-10,0,4,1],h:1},
+bob:{l:[["Bobur","Bugun hamma charchagan. Ishdan keyin choyxonaga boraylikmi? Men to'layman... deyman-u, o'zing to'lasan, ha-ha."]],p:"Boramizmi?",c:[["Boraman",[-5,-12,-40,-3]],["Yo'q, ish ko'p",[0,3,0,1]]],h:.5}},
+{intro:{l:[["","Payshanba. Telefon jiringladi."],["Oyi","Jasurjon, ukang kontrakt to'lovi uchun 500 ming kerak ekan. Qiynalma, o'zimiz hal qilamiz..."]],p:"Oyisiga nima deysan?",c:[["500 ming yuboraman",[0,-8,-500,0]],["Hozir iloji yo'q, oyi",[0,10,0,0]]]},
+boss:()=>S.rp>=45?{l:[["Rustam aka","Ishlaringdan mamnunman. Mana, kichik premiya."]],e:[0,-4,300,3],h:1}:{l:[["Rustam aka","Premiya haqida o'ylab ko'raman. Hozircha natija yetarli emas."]],e:[0,5,0,0],h:1},
+mal:{l:[["Malika","Ilovam tayyor! Juma kuni mijozga taqdimot qilaman."],["Malika","Sen bilan jamoa tuzsak, bu ish kattaroq bo'lardi. O'ylab ko'rasanmi?"]],p:"Javobing?",c:[["O'ylab ko'raman",[0,0,0,0,1]],["Men barqaror ishni yoqtiraman",[0,-3,0,2]]],h:1},
+bob:{l:[["Bobur","Rustam aka kecha kechgacha ofisda o'tirgan. U ham charchagan, deyishadi."],["Jasur","Hammamiz odammiz, Bobur."]],e:[0,-2,0,0],h:.5}},
+{intro:{l:[["","Juma. Bugun hal qiluvchi kun."],["Jasur","Nima bo'lsa ham, bu hafta mendan qolgan eng yaxshi hafta bo'ldi."]]},
+boss:()=>S.rp>=50?{l:[["Rustam aka","Jasur, bu hafta o'zingni ko'rsatding. O'rinbosarlikka birinchi nomzodsan."],["Rustam aka","Ish tugagach javobingni ayt."]],e:[0,0,0,5],h:1}:{l:[["Rustam aka","Hisobot yomon emas, lekin o'rinbosarlik uchun hali erta."],["Rustam aka","Balki keyingi chorakda imkoniyat bo'lar."]],e:[0,3,0,0],h:1},
+mal:{l:[["Malika","Taqdimot juda yaxshi o'tdi! Mijoz bizga ishondi."],["Malika","Savolim o'sha-o'sha: bizga qo'shilasanmi?"]],e:[0,-8,0,0,1],h:1},
+bob:{l:[["Bobur","Nima qilsang ham, o'zing uchun qil. Hayot qisqa, hisobot esa cheksiz."]],e:[0,-8,0,0],h:.5}}];
+const EN={boss:["Bo'lim boshlig'i o'rinbosari","Jasur lavozimga ko'tarildi. Maosh oshdi, mas'uliyat ham. Kechqurunlari hamon kurs o'qiydi: keyingi maqsad boshliq bo'lish. Barqarorlik ham orzu bo'la oladi."],
+late:["Ikkinchi imkoniyat","Rustam aka bu safar boshqani tanladi. Jasur xafa bo'ldi, lekin hisobotlari e'tiborga olindi. Keyingi chorakda yangi imkoniyat kutmoqda."],
+startup:["HisobKit","Jasur va Malika ilovani ishga tushirdi. Dastlab qiyin bo'ldi, lekin birinchi mingta mijoz kelganda Jasur tushundi: orzu ish kunining ichida emas, undan tashqarida ekan."],
+solo:["Yolg'iz yo'l","Jasur o'z biznesini boshladi, lekin Malika bilan ishonch yetarli emas edi. Yo'l uzoq va qiyin, ammo u hali ham harakatda."],
+rest:["Dam olish","Jasur bir oy ta'til oldi va oilasi bilan vaqt o'tkazdi. Ba'zan to'xtash eng katta qadam bo'ladi."],
+burn:["Charchoq","Jasur oxirgi kuchini ham sarfladi. Shifokor ta'til buyurdi: 'Ish muhim, lekin sog'liq undan muhim'. Jasur birinchi marta o'zi uchun to'xtadi."]};
+function E(a){const[e,s,m,rr,f]=a,p=[];S.en=cl(S.en+e);S.st=cl(S.st+s);S.mo+=m;S.rp=cl(S.rp+rr);if(f)S.fr++;
+if(e)p.push((e>0?'+':'')+e+' Energiya');if(s)p.push((s>0?'+':'')+s+' Stress');if(m)p.push((m>0?'+':'')+m+'k');if(rr)p.push((rr>0?'+':'')+rr+" Obro'");
+if(p.length)S.pop=[p.join('  '),160]}
+function say(a,cb){S.q=a.slice();S.cb=cb||null;S.mode='say';nx()}
+function nx(){if(!S.q.length){S.mode='play';const c=S.cb;S.cb=null;c&&c();return}const l=S.q.shift();S.nm=l[0];S.ln=wrap(l[1],290);S.tot=S.ln.join('').length;S.ty=0}
+function ask(p,o){S.pr=p;S.op=o;S.sel=0;S.mode='choice'}
+function pick(i){beep(660,.06);const o=S.op[i];S.mode='play';o[1]()}
+function fin(h){S.hour+=h;S.mode='play';if(S.hour>=18||S.en<=0)endDay()}
+function run(ev,key){if(typeof ev=='function')ev=ev();if(key)S.done[key]=1;const end=()=>fin(ev.h||0);
+say(ev.l,()=>{if(ev.c)ask(ev.p||'Nima deysan?',ev.c.map(o=>[o[0],()=>{E(o[1]);o[2]?say(o[2],end):end()}]));else{ev.e&&E(ev.e);end()}})}
+function endDay(){S.hour=18;say([["","Soat 18:00. Ish kuni tugadi."]],evening)}
+function fe(id){S.end=id;S.mode='end'}
+function evening(){
+if(S.st>=90||S.en<=0)return fe('burn');
+if(S.day==4)return ask("Katta qaror. Nima qilasan?",[["Rustam akaning taklifini qabul qilaman",()=>fe(S.rp>=50?'boss':'late')],["Malikaning jamoasiga qo'shilaman",()=>fe(S.fr>=2?'startup':'solo')],["Hammasidan dam olaman",()=>fe('rest')]]);
+const ev2=(f,t)=>()=>{E(f);say([["",t]],nextDay)};
+ask("Kechqurun nima qilasan?",[["Erta uxlayman",ev2([35,-12,0,0],"Jasur erta uxlab, kuch to'pladi.")],["Onlayn kurs o'qiyman",ev2([-10,3,0,3],"Jasur yangi narsa o'rgandi.")],["Do'stlar bilan choyxona",ev2([-5,-20,-60,0],"Choyxonada kulgi va issiq choy. Yuk yengillashdi.")]])}
+function nextDay(){S.day++;S.hour=9;S.wk=0;S.cof=0;S.done={};S.px=160;S.py=150;S.en=cl(S.en+25);S.bn=150;run(D[S.day].intro)}
+function start(){S={mode:'play',t:0,day:0,hour:9,en:80,st:20,mo:900,rp:40,fr:0,wk:0,cof:0,done:{},px:160,py:150,dir:'u',bn:150,pop:null};run(D[0].intro)}
+function near(){let b=null,m=22;HS.forEach(h=>{const d=Math.hypot(h.x-S.px,h.y-S.py);if(d<m){m=d;b=h}});return b}
+function use(h){const k=S.day+h.id;
+if(h.id=='desk')return desk();if(h.id=='coffee')return coffee();
+if(h.id=='exit')return ask("Uyga ketamizmi?",[["Ha, ish tugadi",endDay],["Yo'q, qolaman",()=>{}]]);
+if(S.done[k])return say([[h.l,SM[h.id]]]);run(D[S.day][h.id],k)}
+const rz=()=>50+Math.random()*184;
+function desk(){
+if(S.wk>=2)return say([["Jasur","Bugungi hisobot qismi tayyor. Qolganini ertaga bajaraman."]]);
+if(S.en<15)return say([["Jasur","Ko'zlarim yumilib ketyapti... Avval kofe kerak."]]);
+say([["Jasur","Hisobotni yozamiz. Diqqat!"]],()=>{S.mode='mg';S.mg={x:60,d:1,v:2.2+S.day*.35,t:0,h:0,z:rz()}})}
+function hit(){const m=S.mg;if(m.x>=m.z&&m.x<=m.z+36){m.h++;beep(880,.08)}else beep(200,.1);m.t++;m.v*=1.12;m.z=rz();
+if(m.t>=3){const h=m.h;S.mg=null;S.wk++;run({l:[["",["Hisobot buzildi...","Qoniqarli ish.","Yaxshi ish!","Mukammal hisobot!"][h]]],e:[-12,h==0?6:-2,0,[-3,0,3,6][h]],h:2})}}
+function coffee(){if(S.cof>=3)return say([["Jasur","Bugun yetarlicha kofe ichdim. Yurak tez uryapti."]]);S.cof++;run({l:[["Jasur","Issiq kofe. Hayot yaxshiroq ko'rinyapti."]],e:[18,-4,-10,0],h:.5})}
+function act(){beep(440,.04);const m=S.mode;
+if(m=='title'||m=='end')return start();if(S.bn>90)return;
+if(m=='say'){S.ty<S.tot?S.ty=S.tot:nx()}else if(m=='choice')pick(S.sel);else if(m=='mg')hit();
+else if(m=='play'){const h=near();h&&use(h)}}
+function ok(x,y){if(x<8||x>312||y<48||y>178)return 0;return!CO.some(c=>x+3>c[0]&&x-3<c[0]+c[2]&&y>c[1]&&y-3<c[1]+c[3])}
+function up(){S.t++;if(S.bn>0)S.bn--;if(S.pop&&--S.pop[1]<=0)S.pop=null;
+if(S.mode=='play'){const dx=(K.r?1:0)-(K.l?1:0),dy=(K.d?1:0)-(K.u?1:0);
+if(dx||dy){S.dir=dx<0?'l':dx>0?'r':dy<0?'u':'d';S.mv=1;const k=(dx&&dy)?.92:1.3;if(ok(S.px+dx*k,S.py))S.px+=dx*k;if(ok(S.px,S.py+dy*k))S.py+=dy*k}else S.mv=0}
+else if(S.mode=='say'&&S.ty<S.tot)S.ty+=1.2;
+else if(S.mode=='choice'){if(K.u&&!pk.u)S.sel=(S.sel+S.op.length-1)%S.op.length;if(K.d&&!pk.d)S.sel=(S.sel+1)%S.op.length}
+else if(S.mode=='mg'){const m=S.mg;m.x+=m.v*m.d;if(m.x>270||m.x<50)m.d*=-1}
+pk={...K};U.style.display=S.mode=='play'?'':'none'}
+function pr(x,y,c,d,w){const o=w?Math.floor(S.t/6)%2:0;
+r(x-4,y,8,1,'rgba(0,0,0,.25)');r(x-3,y-2,2,o?1:2,c.p);r(x+1,y-2,2,o?2:1,c.p);
+r(x-4,y-8,8,6,c.s);r(x-5,y-8,1,5,c.s);r(x+4,y-8,1,5,c.s);if(c.t)r(x,y-8,1,4,c.t);
+r(x-3,y-13,6,5,'#e8b98a');
+if(d=='u')r(x-3,y-14,6,6,c.h);else{r(x-3,y-14,6,2,c.h);const e=d=='l'?[-3,-1]:d=='r'?[0,2]:[-2,1];e.forEach(i=>r(x+i,y-11,1,1,'#000'))}
+if(c.l){r(x-4,y-13,1,6,c.h);r(x+3,y-13,1,6,c.h)}}
+function dk(x,y,w,h){r(x,y,w,h,'#9b6a3a');r(x,y+h-3,w,3,'#6e4a26');const m=x+w/2;r(m-7,y-7,14,9,'#222');r(m-6,y-6,12,7,'#4fa3ff');r(m-6,y+4,12,3,'#ccc')}
+function world(){
+r(0,0,320,180,'#7d6e5c');for(let y=40;y<180;y+=16)for(let x=0;x<320;x+=16)if((x+y)/16%2==0)r(x,y,16,16,'#867764');
+r(0,0,320,38,'#d8d0bc');r(0,34,320,4,'#a89f88');
+const sk=S.hour>15.5?'#f0a868':'#8fd0ff';[20,90,200].forEach(x=>{r(x,6,42,22,'#7a6a58');r(x+2,8,38,18,sk);r(x+20,8,2,18,'#7a6a58')});
+r(150,24,18,16,'#555');r(152,26,14,6,'#222');r(155,34,8,4,'#c8a060');r(160,34,1,1,'#fff');
+r(253,38,67,74,'#6a3b3b');r(250,38,3,32,'#9ab8c8');r(250,100,3,13,'#9ab8c8');r(250,110,70,3,'#9ab8c8');
+r(262,8,40,12,'#222');const h=Math.floor(S.hour),mn=Math.floor(S.hour%1*60);txt(h+':'+(mn<10?'0':'')+mn,270,17,'#6f6');
+r(10,42,10,8,'#7a4a2a');r(11,32,8,10,'#3a9a4a');r(228,42,10,8,'#7a4a2a');r(229,32,8,10,'#3a9a4a');
+const I=[[78,()=>dk(30,60,44,18)],[106,()=>pr(104,108,PM,'d')],[114,()=>dk(82,98,44,16)],[106,()=>pr(196,108,PB,'d')],[114,()=>dk(174,98,44,16)],[58,()=>pr(268,58,PR,'d')],[68,()=>dk(260,56,50,12)],[S.py,()=>pr(S.px,S.py,PJ,S.dir,S.mv)]];
+I.sort((a,b)=>a[0]-b[0]).forEach(i=>i[1]());
+if(S.mode=='play'){for(const k in EP)if(!S.done[S.day+k]&&S.t%50<35)txt('!',EP[k][0]-1,EP[k][1],'#ff0');
+const n=near();if(n){const w=n.l.length*5+14;r(S.px-w/2,S.py-30,w,10,'#101020');txt(n.l+' [A]',S.px-w/2+4,S.py-22,'#e8c860')}}}
+function bar(x,y,w,v,c,l){txt(l,x-8,y+6,'#ddd');r(x,y,w,6,'#333');r(x,y,w*v/100,6,c)}
+function hud(){r(0,0,320,12,'#1b1b2b');txt(DN[S.day],3,9,'#fff');bar(88,3,34,S.en,'#4c4','E');bar(138,3,34,S.st,'#e54','S');bar(188,3,34,S.rp,'#59f','O');txt(S.mo+'k',232,9,'#fd5');
+if(S.pop)txt(S.pop[0],160-S.pop[0].length*2.4,24,'#fff')}
+function box(){r(4,124,312,52,'#101020');r(4,124,312,2,'#e8c860');r(4,174,312,2,'#e8c860');
+if(S.nm){r(8,115,Math.max(36,S.nm.length*5+10),11,'#e8c860');txt(S.nm,12,124,'#101020')}
+let n=Math.floor(S.ty);S.ln.forEach((l,i)=>{txt(l.slice(0,Math.max(0,n)),10,140+i*10,'#fff');n-=l.length});
+if(S.ty>=S.tot&&S.t%40<25)r(304,168,6,4,'#e8c860')}
+function chbox(){const n=S.op.length;S.top=170-n*14;r(4,S.top-20,312,176-(S.top-20),'#101020');r(4,S.top-20,312,2,'#e8c860');
+txt(S.pr,10,S.top-8,'#e8c860');S.op.forEach((o,i)=>{const y=S.top+i*14;if(S.sel==i)r(8,y,304,12,'#e8c860');txt(o[0],14,y+9,S.sel==i?'#101020':'#fff')})}
+function mgd(){const m=S.mg;r(40,50,240,64,'#101020');r(40,50,240,2,'#e8c860');txt("Hisobot: yashil zonada bos!   "+m.t+"/3",50,68,'#fff');
+r(50,80,220,14,'#444');r(m.z,80,36,14,'#4c4');r(m.x-1,77,3,20,'#fff');txt("Aniq zarbalar: "+m.h,50,110,'#e8c860')}
+function title(){r(0,0,320,180,'#1d2a4a');for(let i=0;i<14;i++){const h=30+(i*37%60);r(i*24,150-h,20,h,'#2a3a60');for(let j=0;j<h/10;j++)r(i*24+4,150-h+4+j*10,3,3,(i+j)%3?'#ffd860':'#3a4a70')}
+r(0,150,320,30,'#14141f');g.font='bold 24px monospace';txt('OFIS HAYOTI',58,66,'#e8c860');g.font='bold 9px monospace';
+txt("Jasurning bir haftasi",100,84,'#fff');if(S.t%60<40)txt('Boshlash uchun ekranga bosing',74,128,'#fff');
+pr(160,172,PJ,'d',0);g.font='bold 8px monospace'}
+function ending(){r(0,0,320,180,'#14141f');const e=EN[S.end];g.font='bold 14px monospace';txt(e[0],160-e[0].length*4.2,40,'#e8c860');g.font='bold 8px monospace';
+wrap(e[1],270).forEach((l,i)=>txt(l,24,64+i*11,'#fff'));
+txt("Obro': "+S.rp+"   Stress: "+S.st+"   Energiya: "+S.en+"   Pul: "+S.mo+"k",40,150,'#8cf');
+if(S.t%60<40)txt("Qayta o'ynash uchun bosing",86,170,'#e8c860')}
+function draw(){g.clearRect(0,0,320,180);
+if(S.mode=='title')return title();if(S.mode=='end')return ending();
+world();hud();if(S.mode=='say')box();if(S.mode=='choice')chbox();if(S.mode=='mg')mgd();
+if(S.bn>0){g.globalAlpha=Math.min(1,S.bn/40);r(0,0,320,180,'#000');g.globalAlpha=1;if(S.bn>20){txt((S.day+1)+'-KUN',140,86,'#e8c860');txt(DN[S.day],160-DN[S.day].length*2.4,100,'#fff')}}}
+let last=0,acc=0;function loop(ts){acc+=Math.min(100,ts-last);last=ts;while(acc>=16.67){up();acc-=16.67}draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script></body></html>
